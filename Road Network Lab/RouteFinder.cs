@@ -40,7 +40,7 @@
 
             foreach (var road in network.GetOutgoingRoads(u))
             {
-                double roadTime = road.BaseTime + road.Congestion * road.Flow;
+                double roadTime = TrafficModel.GetTravelTime(road);
                 double newDist = dist[u] + roadTime;
 
                 if (newDist < dist[road.To])
