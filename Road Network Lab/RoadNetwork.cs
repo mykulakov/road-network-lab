@@ -7,6 +7,7 @@
     public int RoadCount => _roadsById.Count;
 
     public IEnumerable<int> Vertices => _outgoing.Keys;
+    public IEnumerable<Road> Roads => _roadsById.Values;
 
     public bool HasVertex(int v) => _outgoing.ContainsKey(v);
 
