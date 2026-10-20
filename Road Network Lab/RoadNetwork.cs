@@ -56,6 +56,41 @@
 
     public bool HasRoute(int from, int to)
     {
-        throw new NotImplementedException();
+        if (!HasVertex(from)){
+            throw new ArgumentException($"Vertex {from} does not exist");
+        }
+
+        if (!HasVertex(to)){
+            throw new ArgumentException($"Vertex {to} does not exist");
+        }
+
+        var visited = new HashSet<int>();
+        Queue<int> q = new Queue<int>();
+
+        visited.Add(from);
+        q.Enqueue(from);
+
+        while(q.Count > 0)
+        {
+            int v = q.Dequeue();
+
+            if (v == to)
+            {
+                return true;
+            }
+
+            foreach (Road road in GetOutgoingRoads(v))
+            {
+                int next = road.To;
+
+                if (!visited.Contains(next))
+                {
+                    visited.Add(next);
+                    q.Enqueue(next);
+                }
+            }
+        }
+
+        return false;
     }
 }
