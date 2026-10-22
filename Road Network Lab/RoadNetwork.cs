@@ -21,6 +21,16 @@
 
     public void AddRoad(int id, int from, int to, double baseTime, double congestion)
     {
+        if(baseTime < 0 || double.IsNaN(baseTime))
+        {
+            throw new ArgumentException($"Base time cannot be less than 0 (a road with id {id})");
+        }
+
+        if (congestion < 0 || double.IsNaN(congestion))
+        {
+            throw new ArgumentException($"Congestion cannot be less than 0 (a road with id {id})");
+        }
+
         if (_roadsById.ContainsKey(id))
         {
             throw new ArgumentException($"A road with ID {id} already exists");
@@ -92,5 +102,22 @@
         }
 
         return false;
+    }
+
+    public RoadNetwork Clone()
+    {
+        var copy = new RoadNetwork();
+
+        foreach (int v in _outgoing.Keys)
+        {
+            copy.AddVertex(v);
+        }
+
+        foreach (Road road in _roadsById.Values)
+        {
+            copy.AddRoad(road.Id, road.From, road.To, road.BaseTime, road.Congestion);
+        }
+
+        return copy;
     }
 }

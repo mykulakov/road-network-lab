@@ -87,6 +87,8 @@
 
     public static AssignmentResult RunIterations(RoadNetwork network, List<Driver> drivers, int maxIterations)
     {
+        var history = new List<IterationStats>();
+
         TrafficModel.ResetFlows(network);
 
         foreach (Driver driver in drivers)
@@ -123,12 +125,18 @@
             ApplyFlows(network, drivers);
             UpdateTravelTimes(drivers);
 
+            double mean = (drivers.Select(d => d.TravelTime)).Average();
+            double max = (drivers.Select(d => d.TravelTime)).Max();
+            double sum = (drivers.Select(d => d.TravelTime)).Sum();
+
+            history.Add(new IterationStats(k, mean, max, sum));
+
             if (MaxGap(network, drivers) <= GapTolerance)
             {
-                return new AssignmentResult(true, k, changed);
+                return new AssignmentResult(true, k, changed, history);
             }
         }
 
-        return new AssignmentResult(false, maxIterations, changed);
+        return new AssignmentResult(false, maxIterations, changed, history);
     }
 }
