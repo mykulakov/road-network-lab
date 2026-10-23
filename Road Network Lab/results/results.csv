@@ -1,0 +1,4 @@
+scenario,iteration,mean_travel_time,max_travel_time,total_travel_time,converged
+Baseline,1,85,85,340000,false
+Baseline,2,65,65,260000,true
+Modified,1,80,80,320000,true

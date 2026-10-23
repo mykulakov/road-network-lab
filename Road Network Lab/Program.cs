@@ -12,5 +12,18 @@ Console.WriteLine($"change={cmp.MeanChange}, percent={cmp.MeanChangePercent:F2},
 foreach (var s in a.History)
     Console.WriteLine($"iter {s.Iteration}: mean={s.MeanTravelTime}, max={s.MaxTravelTime}, total={s.TotalTravelTime}");
 
-CsvExporter.Save("results.csv", new[] { a, b });
-Console.WriteLine($"Saved to: {Path.GetFullPath("results.csv")}");
+string csvPath = Path.Combine(FindProjectDirectory(), "results", "results.csv");
+CsvExporter.Save(csvPath, new[] { a, b });
+Console.WriteLine($"Saved to: {csvPath}");
+
+static string FindProjectDirectory()
+{
+    var dir = new DirectoryInfo(AppContext.BaseDirectory);
+
+    while (dir != null && dir.GetFiles("*.csproj").Length == 0)
+    {
+        dir = dir.Parent;
+    }
+
+    return dir?.FullName ?? Directory.GetCurrentDirectory();
+}

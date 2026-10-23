@@ -1,10 +1,20 @@
 ﻿public static class ExperimentRunner
 {
+    /// <summary>
+    /// Runs the traffic assignment for one scenario and collects statistics.
+    /// Note: modifies the passed network (road flows) and drivers (routes, travel times),
+    /// so each scenario needs its own network and driver list.
+    /// </summary>
     public static ScenarioResult RunScenario(string name, RoadNetwork network, List<Driver> drivers, int maxIterations)
     {
         if(drivers.Count == 0)
         {
             throw new ArgumentException($"Scenario '{name}': the list of drivers is empty.");
+        }
+
+        if (maxIterations < 1)
+        {
+            throw new ArgumentException($"Scenario '{name}': maxIterations must be at least 1.");
         }
 
         var checkedPairs = new HashSet<(int, int)>();
@@ -20,7 +30,7 @@
 
             if (!network.HasRoute(driver.Start, driver.End))
             {
-                throw new ArgumentException($"No route from {driver.Start} to {driver.End}");
+                throw new ArgumentException($"Scenario '{name}': no route from {driver.Start} to {driver.End}.");
             }
         }
 
@@ -35,6 +45,7 @@
         return new ScenarioResult(name, network.VertexCount, network.RoadCount, drivers.Count, meanTravelTime, maxTravelTime, totalTravelTime, res.Converged, res.Iterations, driverTimes, res.History);
     }
 
+    // drivers are matched by index, which is valid because both scenarios use identical demand
     public static ScenarioComparison Compare(ScenarioResult baseline, ScenarioResult modified)
     {
         if (baseline.DriverTimes.Count != modified.DriverTimes.Count)

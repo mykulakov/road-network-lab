@@ -1,5 +1,9 @@
 ﻿public static class TrafficAssignment
 {
+    // Absolute tolerance (in time units): the assignment counts as converged
+    // when no driver could save more than this by switching to the shortest route.
+    private const double GapTolerance = 1.0;
+
     public static void AssignRoutes(RoadNetwork network, List<Driver> drivers)
     {
         foreach (Driver driver in drivers)
@@ -37,7 +41,7 @@
         UpdateTravelTimes(drivers);
     }
 
-    public static bool AreSameRoute(RouteResult? route1, RouteResult? route2)
+    internal static bool AreSameRoute(RouteResult? route1, RouteResult? route2)
     {
         if(route1 == null || route2 == null)
         {
@@ -47,12 +51,12 @@
         return route1.Roads.Select(r => r.Id).SequenceEqual(route2.Roads.Select(r => r.Id));
     }
 
-    public static bool IsRouteRevisedOnK(int driverIndex, int k)
+    internal static bool IsRouteRevisedOnK(int driverIndex, int k)
     {
         return driverIndex % k == 0;
     }
 
-    public static double MaxGap(RoadNetwork network, List<Driver> drivers)
+    internal static double MaxGap(RoadNetwork network, List<Driver> drivers)
     {
         double maxGap = 0;
         var shortestTimes = new Dictionary<(int, int), double>();
@@ -83,8 +87,10 @@
         return maxGap;
     }
 
-    private const double GapTolerance = 1.0;
 
+    // Method of successive averages (MSA): on iteration k only drivers whose
+    // index is divisible by k re-evaluate their route (roughly 1/k of all drivers).
+    // This damps the oscillation that occurs when everyone switches at once.
     public static AssignmentResult RunIterations(RoadNetwork network, List<Driver> drivers, int maxIterations)
     {
         var history = new List<IterationStats>();

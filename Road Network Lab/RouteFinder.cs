@@ -28,7 +28,7 @@
 
         while (pq.TryDequeue(out int u, out double d))
         {
-            if (d > dist[u])
+            if (d > dist[u]) // stale queue entry: a shorter path to u was already found
             {
                 continue;
             }

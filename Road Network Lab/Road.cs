@@ -1,6 +1,6 @@
 ﻿public class Road
 {
-	public int Id { get; }
+    public int Id { get; }
     public int From { get; }
     public int To { get; }
     public double BaseTime { get; }

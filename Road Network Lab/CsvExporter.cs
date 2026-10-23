@@ -15,15 +15,27 @@ public static class CsvExporter
                 bool converged = result.Converged && s.Iteration == result.Iterations;
 
                 sb.AppendLine(string.Join(",",
-                    result.Name,
+                    Escape(result.Name),
                     s.Iteration.ToString(CultureInfo.InvariantCulture),
                     s.MeanTravelTime.ToString(CultureInfo.InvariantCulture),
                     s.MaxTravelTime.ToString(CultureInfo.InvariantCulture),
                     s.TotalTravelTime.ToString(CultureInfo.InvariantCulture),
-                    converged));
+                    converged ? "true" : "false"));
             }
         }
 
-        File.WriteAllText(path, sb.ToString());
+        string fullPath = Path.GetFullPath(path);
+        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+        File.WriteAllText(fullPath, sb.ToString());
+    }
+
+    private static string Escape(string value)
+    {
+        if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+        {
+            return "\"" + value.Replace("\"", "\"\"") + "\"";
+        }
+
+        return value;
     }
 }

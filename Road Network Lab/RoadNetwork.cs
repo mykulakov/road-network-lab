@@ -21,14 +21,14 @@
 
     public void AddRoad(int id, int from, int to, double baseTime, double congestion)
     {
-        if(baseTime < 0 || double.IsNaN(baseTime))
+        if (baseTime < 0 || !double.IsFinite(baseTime))
         {
-            throw new ArgumentException($"Base time cannot be less than 0 (a road with id {id})");
+            throw new ArgumentException($"Base time must be a finite number >= 0 (a road with id {id})");
         }
 
-        if (congestion < 0 || double.IsNaN(congestion))
+        if (congestion < 0 || !double.IsFinite(congestion))
         {
-            throw new ArgumentException($"Congestion cannot be less than 0 (a road with id {id})");
+            throw new ArgumentException($"Congestion must be a finite number >= 0 (a road with id {id})");
         }
 
         if (_roadsById.ContainsKey(id))
