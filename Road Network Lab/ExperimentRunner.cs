@@ -5,7 +5,7 @@
     /// Note: modifies the passed network (road flows) and drivers (routes, travel times),
     /// so each scenario needs its own network and driver list.
     /// </summary>
-    public static ScenarioResult RunScenario(string name, RoadNetwork network, List<Driver> drivers, int maxIterations)
+    public static ScenarioResult RunScenario(string name, RoadNetwork network, List<Driver> drivers, int maxIterations, double gapTolerance = TrafficAssignment.DefaultGapTolerance)
     {
         if(drivers.Count == 0)
         {
@@ -34,7 +34,7 @@
             }
         }
 
-        AssignmentResult res = TrafficAssignment.RunIterations(network, drivers, maxIterations);
+        AssignmentResult res = TrafficAssignment.RunIterations(network, drivers, maxIterations, gapTolerance);
 
         List<double> driverTimes = drivers.Select(d => d.TravelTime).ToList();
 
@@ -73,5 +73,19 @@
         }
 
         return new ScenarioComparison(meanChange, meanChangePercent, driversWorse);
+    }
+
+    public static List<(int Demand, ScenarioResult Baseline, ScenarioResult Modified)> RunDemandSweep(IEnumerable<int> demands, int maxIterations, double gapTolerance = TrafficAssignment.DefaultGapTolerance)
+    {
+        var rows = new List<(int, ScenarioResult, ScenarioResult)>();
+
+        foreach (int demand in demands)
+        {
+            var baseline = RunScenario($"Baseline {demand}", BraessExample.CreateBaseline(), BraessExample.CreateDrivers(demand), maxIterations, gapTolerance);
+            var modified = RunScenario($"Modified {demand}", BraessExample.CreateModified(), BraessExample.CreateDrivers(demand), maxIterations, gapTolerance);
+            rows.Add((demand, baseline, modified));
+        }
+
+        return rows;
     }
 }

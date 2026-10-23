@@ -2,7 +2,7 @@
 {
     // Absolute tolerance (in time units): the assignment counts as converged
     // when no driver could save more than this by switching to the shortest route.
-    private const double GapTolerance = 1.0;
+    public const double DefaultGapTolerance = 1.0;
 
     public static void AssignRoutes(RoadNetwork network, List<Driver> drivers)
     {
@@ -88,11 +88,14 @@
     }
 
 
-    // Method of successive averages (MSA): on iteration k only drivers whose
-    // index is divisible by k re-evaluate their route (roughly 1/k of all drivers).
-    // This damps the oscillation that occurs when everyone switches at once.
-    public static AssignmentResult RunIterations(RoadNetwork network, List<Driver> drivers, int maxIterations)
+
+    public static AssignmentResult RunIterations(RoadNetwork network, List<Driver> drivers, int maxIterations, double gapTolerance = DefaultGapTolerance)
     {
+        if (gapTolerance < 0 || !double.IsFinite(gapTolerance))
+        {
+            throw new ArgumentException("gapTolerance must be a finite number >= 0.");
+        }
+
         var history = new List<IterationStats>();
 
         TrafficModel.ResetFlows(network);
@@ -137,7 +140,7 @@
 
             history.Add(new IterationStats(k, mean, max, sum));
 
-            if (MaxGap(network, drivers) <= GapTolerance)
+            if (MaxGap(network, drivers) <= gapTolerance)
             {
                 return new AssignmentResult(true, k, changed, history);
             }

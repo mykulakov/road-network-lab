@@ -38,4 +38,28 @@ public static class CsvExporter
 
         return value;
     }
+
+    public static void SaveDemandSweep(string path, IEnumerable<(int Demand, ScenarioResult Baseline, ScenarioResult Modified)> rows, double gapTolerance)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("demand,gap_tolerance,baseline_mean,modified_mean,change,baseline_converged,modified_converged,baseline_iterations,modified_iterations");
+
+        foreach (var (demand, baseline, modified) in rows)
+        {
+            sb.AppendLine(string.Join(",",
+                demand.ToString(CultureInfo.InvariantCulture),
+                gapTolerance.ToString(CultureInfo.InvariantCulture),
+                baseline.MeanTravelTime.ToString(CultureInfo.InvariantCulture),
+                modified.MeanTravelTime.ToString(CultureInfo.InvariantCulture),
+                (modified.MeanTravelTime - baseline.MeanTravelTime).ToString(CultureInfo.InvariantCulture),
+                baseline.Converged ? "true" : "false",
+                modified.Converged ? "true" : "false",
+                baseline.Iterations.ToString(CultureInfo.InvariantCulture),
+                modified.Iterations.ToString(CultureInfo.InvariantCulture)));
+        }
+
+        string fullPath = Path.GetFullPath(path);
+        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+        File.WriteAllText(fullPath, sb.ToString());
+    }
 }
