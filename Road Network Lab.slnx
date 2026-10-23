@@ -1,4 +1,5 @@
 <Solution>
   <Folder Name="/Solution Items/" />
   <Project Path="Road Network Lab/Road Network Lab.csproj" />
+  <Project Path="RoadNetworkLab.Tests/RoadNetworkLab.Tests.csproj" />
 </Solution>
