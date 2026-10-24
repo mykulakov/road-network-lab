@@ -31,8 +31,8 @@ Below about 3000 drivers the new road helps, above that it hurts. Full data is i
 Requires the [.NET SDK](https://dotnet.microsoft.com/download) (the project targets .NET 10).
 
 ```
-git clone https://github.com/mykulakov/RoadNetworkLab.git
-cd RoadNetworkLab
+git clone https://github.com/mykulakov/road-network-lab.git
+cd road-network-lab
 dotnet run --project "Road Network Lab"
 dotnet test
 ```
