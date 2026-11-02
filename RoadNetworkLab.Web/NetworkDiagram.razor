@@ -1,0 +1,140 @@
+﻿@using System.Globalization
+
+<svg viewBox="0 0 640 390" class="diagram" role="img"
+     aria-label="Braess network coloured by road load">
+    <defs>
+        @foreach (int id in new[] { 1, 2, 3, 4, 5 })
+        {
+            <marker id="arrow-@id" viewBox="0 0 10 10" refX="9" refY="5"
+                    markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="@Color(id)" />
+            </marker>
+        }
+
+        <linearGradient id="load-scale" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="rgb(22,163,74)" />
+            <stop offset="0.5" stop-color="rgb(234,179,8)" />
+            <stop offset="1" stop-color="rgb(220,38,38)" />
+        </linearGradient>
+    </defs>
+
+    @* Roads: constant width, colour shows the share of drivers *@
+    <line class="road" style="stroke:@Color(1);stroke-width:5" x1="103" y1="168" x2="297" y2="72" marker-end="url(#arrow-1)" />
+    <line class="road" style="stroke:@Color(2);stroke-width:5" x1="343" y1="72" x2="537" y2="168" marker-end="url(#arrow-2)" />
+    <line class="road" style="stroke:@Color(3);stroke-width:5" x1="103" y1="192" x2="297" y2="288" marker-end="url(#arrow-3)" />
+    <line class="road" style="stroke:@Color(4);stroke-width:5" x1="343" y1="288" x2="537" y2="192" marker-end="url(#arrow-4)" />
+
+    @if (ShowExtraRoad)
+    {
+        <g>
+            <line class="road road-extra" style="stroke:@Color(5);stroke-width:5" x1="320" y1="86" x2="320" y2="274" marker-end="url(#arrow-5)" />
+            <text class="label label-extra" x="334" y="184">t = 0</text>
+            <text class="flow" x="334" y="202">@Stat(5)</text>
+        </g>
+    }
+
+    @* Road labels: travel time as a function of the number of drivers x *@
+    <text class="label" x="175" y="108" text-anchor="middle">t = x / 100</text>
+    <text class="label" x="465" y="108" text-anchor="middle">t = 45</text>
+    <text class="label" x="175" y="268" text-anchor="middle">t = 45</text>
+    <text class="label" x="465" y="268" text-anchor="middle">t = x / 100</text>
+
+    @* Results of the last run: drivers on the road and its actual travel time *@
+    <text class="flow" x="165" y="92" text-anchor="middle">@Stat(1)</text>
+    <text class="flow" x="475" y="92" text-anchor="middle">@Stat(2)</text>
+    <text class="flow" x="165" y="284" text-anchor="middle">@Stat(3)</text>
+    <text class="flow" x="475" y="284" text-anchor="middle">@Stat(4)</text>
+
+    @* Intersections *@
+    <circle class="node" cx="80" cy="180" r="26" />
+    <text class="node-name" x="80" y="186" text-anchor="middle">S</text>
+
+    <circle class="node" cx="320" cy="60" r="26" />
+    <text class="node-name" x="320" y="66" text-anchor="middle">A</text>
+
+    <circle class="node" cx="320" cy="300" r="26" />
+    <text class="node-name" x="320" y="306" text-anchor="middle">B</text>
+
+    <circle class="node" cx="560" cy="180" r="26" />
+    <text class="node-name" x="560" y="186" text-anchor="middle">T</text>
+
+    @if (Roads != null)
+    {
+        <g>
+            <rect x="200" y="352" width="240" height="10" rx="5" fill="url(#load-scale)" />
+            <text class="legend" x="200" y="380" text-anchor="start">0%</text>
+            <text class="legend" x="320" y="380" text-anchor="middle">share of all drivers on the road</text>
+            <text class="legend" x="440" y="380" text-anchor="end">100%</text>
+        </g>
+    }
+</svg>
+
+@code {
+    [Parameter]
+    public bool ShowExtraRoad { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<Road>? Roads { get; set; }
+
+    [Parameter]
+    public int Demand { get; set; }
+
+    private Road? Find(int id)
+    {
+        return Roads?.FirstOrDefault(r => r.Id == id);
+    }
+
+    private string Stat(int id)
+    {
+        Road? road = Find(id);
+
+        if (road == null)
+        {
+            return "";
+        }
+
+        string flow = road.Flow.ToString("0", CultureInfo.InvariantCulture);
+        string time = TrafficModel.GetTravelTime(road).ToString("0.#", CultureInfo.InvariantCulture);
+
+        return $"{flow} drivers · t = {time}";
+    }
+
+    private string Color(int id)
+    {
+        Road? road = Find(id);
+
+        if (road == null || Demand <= 0)
+        {
+            return "#9ca3af";
+        }
+
+        return Scale(Math.Clamp(road.Flow / Demand, 0, 1));
+    }
+
+    // 0 -> green, 0.5 -> yellow, 1 -> red
+    private static string Scale(double t)
+    {
+        (int R, int G, int B) from;
+        (int R, int G, int B) to;
+        double u;
+
+        if (t < 0.5)
+        {
+            from = (22, 163, 74);
+            to = (234, 179, 8);
+            u = t * 2;
+        }
+        else
+        {
+            from = (234, 179, 8);
+            to = (220, 38, 38);
+            u = (t - 0.5) * 2;
+        }
+
+        int r = (int)Math.Round(from.R + (to.R - from.R) * u);
+        int g = (int)Math.Round(from.G + (to.G - from.G) * u);
+        int b = (int)Math.Round(from.B + (to.B - from.B) * u);
+
+        return $"rgb({r},{g},{b})";
+    }
+}
