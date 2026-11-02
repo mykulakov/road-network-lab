@@ -1,0 +1,50 @@
+﻿@page "/"
+
+<PageTitle>Road Network Lab</PageTitle>
+
+<h1>Road Network Lab</h1>
+<p class="subtitle">Does adding a road always make traffic better? Pick a scenario and run it.</p>
+
+<section class="panel">
+    <label>
+        Scenario
+        <select @bind="scenario">
+            <option value="Baseline">Baseline</option>
+            <option value="Modified">Modified (with road A to B)</option>
+        </select>
+    </label>
+
+    <label>
+        Drivers: <strong>@demand</strong>
+        <input type="range" min="100" max="5000" step="100"
+               @bind="demand" @bind:event="oninput" />
+    </label>
+
+    <label>
+        Tolerance
+        <select @bind="tolerance">
+            <option value="1">1 (fast)</option>
+            <option value="0.1">0.1</option>
+            <option value="0.01">0.01 (precise, slower)</option>
+        </select>
+    </label>
+
+    <button @onclick="Run">Run</button>
+</section>
+
+@if (message != "")
+{
+    <p class="message">@message</p>
+}
+
+@code {
+    private string scenario = "Baseline";
+    private int demand = 4000;
+    private string tolerance = "0.1";
+    private string message = "";
+
+    private void Run()
+    {
+        message = $"Selected: {scenario}, {demand} drivers, tolerance {tolerance}";
+    }
+}
