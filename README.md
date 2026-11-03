@@ -26,8 +26,6 @@ The original network has four roads and two possible routes from `S` to `T`.
 
 A new road connects `A` and `B`, creating an additional route.
 
-![Modified scenario](https://github.com/mykulakov/road-network-lab/blob/6717a92dea0a2062c5eb298dea31ac9e9e73bd85/docs/images/rnl-screenshot-2.jpg) 
-
 ## Results
 
 For a demand of 4,000 drivers:
