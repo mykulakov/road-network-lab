@@ -12,17 +12,17 @@ A C# traffic simulation demonstrating **Braess's paradox**: adding a road can ma
 
 Drivers choose routes independently, trying to minimize their own travel time. At equilibrium, no driver can improve their journey by changing routes alone.
 
-Braess's paradox demonstrates that adding a road can change this equilibrium for the worse — increasing travel time for everyone.
+Braess's paradox demonstrates that adding a road can change this equilibrium for the worse - increasing travel time for everyone.
 
 ## The two scenarios
 
-### Baseline — original network
+### Baseline - original network
 
 The original network has four roads and two possible routes from `S` to `T`.
 
 ![Baseline scenario](https://github.com/mykulakov/road-network-lab/blob/6717a92dea0a2062c5eb298dea31ac9e9e73bd85/docs/images/rnl-screenshot-1.jpg)
 
-### Modified — additional connection
+### Modified - additional connection
 
 A new road connects `A` and `B`, creating an additional route.
 
