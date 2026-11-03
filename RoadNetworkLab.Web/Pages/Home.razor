@@ -1,0 +1,269 @@
+﻿@page "/"
+@using System.Globalization
+
+<PageTitle>Road Network Lab</PageTitle>
+
+<header class="site-header">
+    <h1>Road Network Lab</h1>
+</header>
+
+<div class="page">
+    <p class="subtitle">Does adding a road always make traffic better? Pick a scenario and run it.</p>
+
+    <section class="panel">
+        <label>
+            Scenario
+            <select @bind="Scenario">
+                <option value="Baseline">Baseline</option>
+                <option value="Modified">Modified (with road A to B)</option>
+            </select>
+        </label>
+
+        <label>
+            Drivers: <strong>@Demand</strong>
+            <input type="range" min="100" max="5000" step="100"
+                   @bind="Demand" @bind:event="oninput" />
+        </label>
+
+        <label>
+            Tolerance
+            <select @bind="Tolerance">
+                <option value="1">1 (fast)</option>
+                <option value="0.1">0.1</option>
+                <option value="0.01">0.01 (precise, slower)</option>
+            </select>
+        </label>
+
+        <button @onclick="Run" disabled="@running">Run</button>
+        <button class="secondary" @onclick="CompareBoth" disabled="@running">Compare</button>
+    </section>
+
+    @if (running)
+    {
+        <p class="message">Running...</p>
+    }
+
+    @if (comparison == null)
+    {
+        <NetworkDiagram ShowExtraRoad="@(Scenario == "Modified")" Roads="roads" Demand="Demand" />
+    }
+
+    @if (result != null)
+    {
+        <section class="results">
+            <div class="stat">
+                <span class="stat-value">@F(result.MeanTravelTime)</span>
+                <span class="stat-label">mean time</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value">@F(result.MaxTravelTime)</span>
+                <span class="stat-label">max time</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value">@F(result.TotalTravelTime)</span>
+                <span class="stat-label">total time</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value">@result.Iterations</span>
+                <span class="stat-label">iterations</span>
+            </div>
+        </section>
+
+        @if (result.Converged)
+        {
+            <p class="status-ok">Converged: no driver can save noticeable time by switching routes.</p>
+        }
+        else
+        {
+            <p class="status-warning">Warning: the assignment did not converge. This is not an equilibrium, so the numbers are unstable.</p>
+        }
+    }
+
+    @if (comparison != null && baselineResult != null && modifiedResult != null)
+    {
+        <section class="comparison">
+            <h2>Baseline vs Modified (@Demand drivers)</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Baseline</th>
+                        <th>Modified</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Mean time</td>
+                        <td>@F(baselineResult.MeanTravelTime)</td>
+                        <td>@F(modifiedResult.MeanTravelTime)</td>
+                    </tr>
+                    <tr>
+                        <td>Max time</td>
+                        <td>@F(baselineResult.MaxTravelTime)</td>
+                        <td>@F(modifiedResult.MaxTravelTime)</td>
+                    </tr>
+                    <tr>
+                        <td>Total time</td>
+                        <td>@F(baselineResult.TotalTravelTime)</td>
+                        <td>@F(modifiedResult.TotalTravelTime)</td>
+                    </tr>
+                    <tr>
+                        <td>Iterations</td>
+                        <td>@baselineResult.Iterations</td>
+                        <td>@modifiedResult.Iterations</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p class="change">
+                Mean time change: <strong>@Signed(comparison.MeanChange)</strong> (@Percent(comparison.MeanChangePercent))
+            </p>
+            <p>Drivers with a longer trip: <strong>@comparison.DriversWorse</strong> of @Demand</p>
+            <p class="@VerdictClass">@Verdict</p>
+
+            @if (!baselineResult.Converged || !modifiedResult.Converged)
+            {
+                <p class="status-warning">Warning: at least one scenario did not converge, so this comparison is unreliable.</p>
+            }
+
+            <h3 class="diagram-title">Baseline</h3>
+            <NetworkDiagram ShowExtraRoad="false" Roads="baselineRoads" Demand="Demand" IdPrefix="b-" />
+
+            <h3 class="diagram-title">Modified (with road A to B)</h3>
+            <NetworkDiagram ShowExtraRoad="true" Roads="modifiedRoads" Demand="Demand" IdPrefix="m-" />
+        </section>
+    }
+</div>
+
+@code {
+    private const int MaxIterations = 500;
+
+    private string scenario = "Baseline";
+    private int demand = 4000;
+    private string tolerance = "0.1";
+
+    private ScenarioResult? result;
+    private List<Road>? roads;
+    private ScenarioResult? baselineResult;
+    private ScenarioResult? modifiedResult;
+    private List<Road>? baselineRoads;
+    private List<Road>? modifiedRoads;
+    private ScenarioComparison? comparison;
+    private bool running;
+
+    private string Scenario
+    {
+        get => scenario;
+        set { scenario = value; ClearResults(); }
+    }
+
+    private int Demand
+    {
+        get => demand;
+        set { demand = value; ClearResults(); }
+    }
+
+    private string Tolerance
+    {
+        get => tolerance;
+        set { tolerance = value; ClearResults(); }
+    }
+
+    private void ClearResults()
+    {
+        result = null;
+        roads = null;
+        baselineResult = null;
+        modifiedResult = null;
+        baselineRoads = null;
+        modifiedRoads = null;
+        comparison = null;
+    }
+
+    private async Task Run()
+    {
+        running = true;
+        ClearResults();
+        StateHasChanged();
+        await Task.Delay(50);
+
+        RoadNetwork network = scenario == "Modified"
+            ? BraessExample.CreateModified()
+            : BraessExample.CreateBaseline();
+
+        List<Driver> drivers = BraessExample.CreateDrivers(demand);
+        double gapTolerance = double.Parse(tolerance, CultureInfo.InvariantCulture);
+
+        result = ExperimentRunner.RunScenario(scenario, network, drivers, MaxIterations, gapTolerance);
+        roads = network.Roads.ToList();
+
+        running = false;
+    }
+
+    private async Task CompareBoth()
+    {
+        running = true;
+        ClearResults();
+        StateHasChanged();
+        await Task.Delay(50);
+
+        double gapTolerance = double.Parse(tolerance, CultureInfo.InvariantCulture);
+
+        RoadNetwork baselineNetwork = BraessExample.CreateBaseline();
+        RoadNetwork modifiedNetwork = BraessExample.CreateModified();
+
+        ScenarioResult baseline = ExperimentRunner.RunScenario(
+            "Baseline", baselineNetwork, BraessExample.CreateDrivers(demand), MaxIterations, gapTolerance);
+
+        ScenarioResult modified = ExperimentRunner.RunScenario(
+            "Modified", modifiedNetwork, BraessExample.CreateDrivers(demand), MaxIterations, gapTolerance);
+
+        comparison = ExperimentRunner.Compare(baseline, modified);
+        baselineResult = baseline;
+        modifiedResult = modified;
+        baselineRoads = baselineNetwork.Roads.ToList();
+        modifiedRoads = modifiedNetwork.Roads.ToList();
+
+        running = false;
+    }
+
+    private string Verdict
+    {
+        get
+        {
+            if (comparison == null) return "";
+            if (comparison.MeanChange > 1e-9) return "Adding the road made the average trip longer.";
+            if (comparison.MeanChange < -1e-9) return "Adding the road made the average trip shorter.";
+            return "Adding the road did not change the average trip.";
+        }
+    }
+
+    private string VerdictClass
+    {
+        get
+        {
+            if (comparison == null) return "";
+            if (comparison.MeanChange > 1e-9) return "verdict verdict-worse";
+            if (comparison.MeanChange < -1e-9) return "verdict verdict-better";
+            return "verdict";
+        }
+    }
+
+    private static string F(double value)
+    {
+        return value.ToString("0.##", CultureInfo.InvariantCulture);
+    }
+
+    private static string Signed(double value)
+    {
+        return value.ToString("+0.##;-0.##;0", CultureInfo.InvariantCulture);
+    }
+
+    private static string Percent(double value)
+    {
+        return double.IsNaN(value)
+            ? "n/a"
+            : value.ToString("+0.00;-0.00;0.00", CultureInfo.InvariantCulture) + "%";
+    }
+}

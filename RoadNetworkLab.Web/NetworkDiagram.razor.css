@@ -1,0 +1,58 @@
+﻿.diagram {
+    display: block;
+    width: 100%;
+    max-width: 640px;
+    height: auto;
+    margin: 1.5rem auto 0;
+}
+
+.road {
+    stroke: #555;
+    stroke-width: 2.5;
+    fill: none;
+}
+
+.road-extra {
+    stroke: #c0392b;
+    stroke-dasharray: 6 4;
+}
+
+.arrow-head {
+    fill: #555;
+}
+
+.arrow-head-extra {
+    fill: #c0392b;
+}
+
+.node {
+    fill: #fff;
+    stroke: #333;
+    stroke-width: 2;
+}
+
+.node-name {
+    font-size: 20px;
+    font-weight: 600;
+    fill: #333;
+}
+
+.label {
+    font-size: 14px;
+    fill: #444;
+}
+
+.label-extra {
+    fill: #c0392b;
+}
+
+.flow {
+    font-size: 12px;
+    fill: #2563eb;
+    font-weight: 600;
+}
+
+.legend {
+    font-size: 12px;
+    fill: #6b7280;
+}
