@@ -5,13 +5,13 @@
     <defs>
         @foreach (int id in new[] { 1, 2, 3, 4, 5 })
         {
-            <marker id="arrow-@id" viewBox="0 0 10 10" refX="9" refY="5"
+            <marker id="@(IdPrefix)arrow-@id" viewBox="0 0 10 10" refX="9" refY="5"
                     markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto-start-reverse">
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="@Color(id)" />
             </marker>
         }
 
-        <linearGradient id="load-scale" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="@(IdPrefix)load-scale" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0" stop-color="rgb(22,163,74)" />
             <stop offset="0.5" stop-color="rgb(234,179,8)" />
             <stop offset="1" stop-color="rgb(220,38,38)" />
@@ -19,15 +19,15 @@
     </defs>
 
     @* Roads: constant width, colour shows the share of drivers *@
-    <line class="road" style="stroke:@Color(1);stroke-width:5" x1="103" y1="168" x2="297" y2="72" marker-end="url(#arrow-1)" />
-    <line class="road" style="stroke:@Color(2);stroke-width:5" x1="343" y1="72" x2="537" y2="168" marker-end="url(#arrow-2)" />
-    <line class="road" style="stroke:@Color(3);stroke-width:5" x1="103" y1="192" x2="297" y2="288" marker-end="url(#arrow-3)" />
-    <line class="road" style="stroke:@Color(4);stroke-width:5" x1="343" y1="288" x2="537" y2="192" marker-end="url(#arrow-4)" />
+    <line class="road" style="stroke:@Color(1);stroke-width:5" x1="103" y1="168" x2="297" y2="72" marker-end="url(#@(IdPrefix)arrow-1)" />
+    <line class="road" style="stroke:@Color(2);stroke-width:5" x1="343" y1="72" x2="537" y2="168" marker-end="url(#@(IdPrefix)arrow-2)" />
+    <line class="road" style="stroke:@Color(3);stroke-width:5" x1="103" y1="192" x2="297" y2="288" marker-end="url(#@(IdPrefix)arrow-3)" />
+    <line class="road" style="stroke:@Color(4);stroke-width:5" x1="343" y1="288" x2="537" y2="192" marker-end="url(#@(IdPrefix)arrow-4)" />
 
     @if (ShowExtraRoad)
     {
         <g>
-            <line class="road road-extra" style="stroke:@Color(5);stroke-width:5" x1="320" y1="86" x2="320" y2="274" marker-end="url(#arrow-5)" />
+            <line class="road road-extra" style="stroke:@Color(5);stroke-width:5" x1="320" y1="86" x2="320" y2="274" marker-end="url(#@(IdPrefix)arrow-5)" />
             <text class="label label-extra" x="334" y="184">t = 0</text>
             <text class="flow" x="334" y="202">@Stat(5)</text>
         </g>
@@ -61,7 +61,7 @@
     @if (Roads != null)
     {
         <g>
-            <rect x="200" y="352" width="240" height="10" rx="5" fill="url(#load-scale)" />
+            <rect x="200" y="352" width="240" height="10" rx="5" fill="url(#@(IdPrefix)load-scale)" />
             <text class="legend" x="200" y="380" text-anchor="start">0%</text>
             <text class="legend" x="320" y="380" text-anchor="middle">share of all drivers on the road</text>
             <text class="legend" x="440" y="380" text-anchor="end">100%</text>
@@ -78,6 +78,10 @@
 
     [Parameter]
     public int Demand { get; set; }
+
+    // Makes marker and gradient ids unique when several diagrams are on one page
+    [Parameter]
+    public string IdPrefix { get; set; } = "";
 
     private Road? Find(int id)
     {

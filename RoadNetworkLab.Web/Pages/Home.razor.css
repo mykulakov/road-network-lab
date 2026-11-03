@@ -67,10 +67,24 @@
             background: #333;
         }
 
+        .panel button.secondary {
+            color: #111;
+            background: #fff;
+            border: 1px solid #111;
+        }
+
+            .panel button.secondary:hover {
+                background: #f3f4f6;
+            }
+
+        .panel button:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+
 .message {
     margin-top: 1rem;
 }
-
 
 .results {
     display: flex;
@@ -106,4 +120,62 @@
 .status-warning {
     color: #b45309;
     font-weight: 500;
+}
+
+.comparison {
+    margin-top: 1.5rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+}
+
+    .comparison h2 {
+        margin: 0 0 1rem;
+        font-size: 1.1rem;
+    }
+
+    .comparison table {
+        margin: 0 auto 1rem;
+        border-collapse: collapse;
+        min-width: 320px;
+    }
+
+    .comparison th,
+    .comparison td {
+        padding: 0.4rem 1.2rem;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: center;
+    }
+
+    .comparison th {
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .comparison td:first-child {
+        text-align: left;
+        color: #6b7280;
+    }
+
+.change {
+    font-size: 1.1rem;
+}
+
+.verdict {
+    font-weight: 600;
+}
+
+.verdict-worse {
+    color: #b91c1c;
+}
+
+.verdict-better {
+    color: #15803d;
+}
+
+.diagram-title {
+    margin: 1.5rem 0 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
 }

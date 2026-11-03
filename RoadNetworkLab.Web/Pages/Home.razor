@@ -35,6 +35,7 @@
         </label>
 
         <button @onclick="Run" disabled="@running">Run</button>
+        <button class="secondary" @onclick="CompareBoth" disabled="@running">Compare</button>
     </section>
 
     @if (running)
@@ -42,7 +43,10 @@
         <p class="message">Running...</p>
     }
 
-    <NetworkDiagram ShowExtraRoad="@(Scenario == "Modified")" Roads="roads" Demand="Demand" />
+    @if (comparison == null)
+    {
+        <NetworkDiagram ShowExtraRoad="@(Scenario == "Modified")" Roads="roads" Demand="Demand" />
+    }
 
     @if (result != null)
     {
@@ -74,6 +78,62 @@
             <p class="status-warning">Warning: the assignment did not converge. This is not an equilibrium, so the numbers are unstable.</p>
         }
     }
+
+    @if (comparison != null && baselineResult != null && modifiedResult != null)
+    {
+        <section class="comparison">
+            <h2>Baseline vs Modified (@Demand drivers)</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Baseline</th>
+                        <th>Modified</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Mean time</td>
+                        <td>@F(baselineResult.MeanTravelTime)</td>
+                        <td>@F(modifiedResult.MeanTravelTime)</td>
+                    </tr>
+                    <tr>
+                        <td>Max time</td>
+                        <td>@F(baselineResult.MaxTravelTime)</td>
+                        <td>@F(modifiedResult.MaxTravelTime)</td>
+                    </tr>
+                    <tr>
+                        <td>Total time</td>
+                        <td>@F(baselineResult.TotalTravelTime)</td>
+                        <td>@F(modifiedResult.TotalTravelTime)</td>
+                    </tr>
+                    <tr>
+                        <td>Iterations</td>
+                        <td>@baselineResult.Iterations</td>
+                        <td>@modifiedResult.Iterations</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p class="change">
+                Mean time change: <strong>@Signed(comparison.MeanChange)</strong> (@Percent(comparison.MeanChangePercent))
+            </p>
+            <p>Drivers with a longer trip: <strong>@comparison.DriversWorse</strong> of @Demand</p>
+            <p class="@VerdictClass">@Verdict</p>
+
+            @if (!baselineResult.Converged || !modifiedResult.Converged)
+            {
+                <p class="status-warning">Warning: at least one scenario did not converge, so this comparison is unreliable.</p>
+            }
+
+            <h3 class="diagram-title">Baseline</h3>
+            <NetworkDiagram ShowExtraRoad="false" Roads="baselineRoads" Demand="Demand" IdPrefix="b-" />
+
+            <h3 class="diagram-title">Modified (with road A to B)</h3>
+            <NetworkDiagram ShowExtraRoad="true" Roads="modifiedRoads" Demand="Demand" IdPrefix="m-" />
+        </section>
+    }
 </div>
 
 @code {
@@ -85,6 +145,11 @@
 
     private ScenarioResult? result;
     private List<Road>? roads;
+    private ScenarioResult? baselineResult;
+    private ScenarioResult? modifiedResult;
+    private List<Road>? baselineRoads;
+    private List<Road>? modifiedRoads;
+    private ScenarioComparison? comparison;
     private bool running;
 
     private string Scenario
@@ -109,6 +174,11 @@
     {
         result = null;
         roads = null;
+        baselineResult = null;
+        modifiedResult = null;
+        baselineRoads = null;
+        modifiedRoads = null;
+        comparison = null;
     }
 
     private async Task Run()
@@ -131,8 +201,69 @@
         running = false;
     }
 
+    private async Task CompareBoth()
+    {
+        running = true;
+        ClearResults();
+        StateHasChanged();
+        await Task.Delay(50);
+
+        double gapTolerance = double.Parse(tolerance, CultureInfo.InvariantCulture);
+
+        RoadNetwork baselineNetwork = BraessExample.CreateBaseline();
+        RoadNetwork modifiedNetwork = BraessExample.CreateModified();
+
+        ScenarioResult baseline = ExperimentRunner.RunScenario(
+            "Baseline", baselineNetwork, BraessExample.CreateDrivers(demand), MaxIterations, gapTolerance);
+
+        ScenarioResult modified = ExperimentRunner.RunScenario(
+            "Modified", modifiedNetwork, BraessExample.CreateDrivers(demand), MaxIterations, gapTolerance);
+
+        comparison = ExperimentRunner.Compare(baseline, modified);
+        baselineResult = baseline;
+        modifiedResult = modified;
+        baselineRoads = baselineNetwork.Roads.ToList();
+        modifiedRoads = modifiedNetwork.Roads.ToList();
+
+        running = false;
+    }
+
+    private string Verdict
+    {
+        get
+        {
+            if (comparison == null) return "";
+            if (comparison.MeanChange > 1e-9) return "Adding the road made the average trip longer.";
+            if (comparison.MeanChange < -1e-9) return "Adding the road made the average trip shorter.";
+            return "Adding the road did not change the average trip.";
+        }
+    }
+
+    private string VerdictClass
+    {
+        get
+        {
+            if (comparison == null) return "";
+            if (comparison.MeanChange > 1e-9) return "verdict verdict-worse";
+            if (comparison.MeanChange < -1e-9) return "verdict verdict-better";
+            return "verdict";
+        }
+    }
+
     private static string F(double value)
     {
         return value.ToString("0.##", CultureInfo.InvariantCulture);
+    }
+
+    private static string Signed(double value)
+    {
+        return value.ToString("+0.##;-0.##;0", CultureInfo.InvariantCulture);
+    }
+
+    private static string Percent(double value)
+    {
+        return double.IsNaN(value)
+            ? "n/a"
+            : value.ToString("+0.00;-0.00;0.00", CultureInfo.InvariantCulture) + "%";
     }
 }
